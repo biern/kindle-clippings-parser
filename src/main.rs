@@ -1,12 +1,14 @@
-use indoc::indoc;
 use nom::{
     bytes::complete::{tag, take_while},
     character::complete::digit1,
     character::complete::space1,
     combinator::map_res,
-    sequence::{pair, terminated, tuple},
+    multi::many1,
+    sequence::{preceded, separated_pair, terminated, tuple},
 };
+use std::fs;
 
+#[derive(Debug, PartialEq, Eq)]
 struct Clipping {
     title: String,
     author: String,
@@ -21,13 +23,17 @@ struct Location {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let input = fs::read_to_string("My Clippings.txt").unwrap();
+
+    let clippings = many1(parse_clipping)(&input);
+
+    println!("{:?}", clippings);
 }
 
 fn parse_clipping(input: &str) -> nom::IResult<&str, Clipping> {
     let (input, (title, author)) = parse_title(input)?;
     let (input, location) = parse_location(input)?;
-    let (input, text) = parse_text(input)?;
+    let (input, text) = preceded(tag("\r\n"), parse_text)(input)?;
 
     return Ok((
         input,
@@ -41,7 +47,7 @@ fn parse_clipping(input: &str) -> nom::IResult<&str, Clipping> {
 }
 
 fn parse_title(input: &str) -> nom::IResult<&str, (&str, &str)> {
-    let (input, line) = take_while(|c| c != '\n')(input)?;
+    let (input, line) = terminated(take_while(|c| c != '\r'), tag("\r\n"))(input)?;
 
     let split: Vec<_> = line.rsplitn(2, " (").take(2).collect();
 
@@ -59,13 +65,13 @@ fn parse_title(input: &str) -> nom::IResult<&str, (&str, &str)> {
 
 fn parse_location(input: &str) -> nom::IResult<&str, Location> {
     let (input, _) = tuple((tag("- Your Highlight at location"), space1))(input)?;
-    let (input, (loc_from, _, loc_to)) = tuple((
+    let (input, (loc_from, loc_to)) = separated_pair(
         map_res(digit1, |d| u32::from_str_radix(d, 10)),
         tag("-"),
         map_res(digit1, |d| u32::from_str_radix(d, 10)),
-    ))(input)?;
+    )(input)?;
 
-    let (input, _) = take_while(|c| c != '\n')(input)?;
+    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n"))(input)?;
 
     Ok((
         input,
@@ -77,46 +83,55 @@ fn parse_location(input: &str) -> nom::IResult<&str, Location> {
 }
 
 fn parse_text(input: &str) -> nom::IResult<&str, &str> {
-    terminated(take_while(|c| c != '\n'), tag("\n==========\n"))(input)
+    for c in 0..input.len() {
+        let terminated: nom::IResult<&str, &str> = tag("\r\n==========\r\n")(&input[c..]);
+
+        if let Ok((remaining, _)) = terminated {
+            return Ok((remaining, &input[..c]));
+        }
+    }
+
+    return Err(nom::Err::Incomplete(nom::Needed::Unknown));
 }
 
 mod test {
+    use insta::assert_debug_snapshot;
+
     use super::*;
 
-    const single_clipping_flow: &str = indoc! {"
-Flow (Mihaly Csikszentmihalyi)
-- Your Highlight at location 1213-1214 | Added on Sunday, 12 July 2015 17:36:17
-
-The reason it is possible to achieve such complete involvement in a flow experience is that goals are usually clear, and feedback immediate.
-==========
-"};
+    const SINGLE_CLIPPING: &str = "Flow (Mihaly Csikszentmihalyi)\r
+- Your Highlight at location 1213-1214 | Added on Sunday, 12 July 2015 17:36:17\r
+\r
+The reason it is possible to achieve such complete involvement in a flow experience is that goals are usually clear, and feedback immediate.\r
+==========\r
+";
 
     #[test]
     fn title() {
         assert_eq!(
-            parse_title("Flow (Mihaly Csikszentmihalyi)\n"),
-            Ok(("\n", ("Flow", "Mihaly Csikszentmihalyi")))
+            parse_title("Flow (Mihaly Csikszentmihalyi)\r\n"),
+            Ok(("", ("Flow", "Mihaly Csikszentmihalyi")))
         );
     }
 
     #[test]
     fn title_with_parens() {
         assert_eq!(
-            parse_title("Foo (Bar) Baz (Author)\n"),
-            Ok(("\n", ("Foo (Bar) Baz", "Author")))
+            parse_title("Foo (Bar) Baz (Author)\r\n"),
+            Ok(("", ("Foo (Bar) Baz", "Author")))
         );
     }
 
     #[test]
     fn location() {
         let res = parse_location(
-            "- Your Highlight at location 1213-1214 | Added on Sunday, 12 July 2015 17:36:17\n",
+            "- Your Highlight at location 1213-1214 | Added on Sunday, 12 July 2015 17:36:17\r\n",
         );
 
         assert_eq!(
             res,
             Ok((
-                "\n",
+                "",
                 Location {
                     from: 1213,
                     to: 1214
@@ -127,8 +142,15 @@ The reason it is possible to achieve such complete involvement in a flow experie
 
     #[test]
     fn text() {
-        let res = parse_text("Foo bar baz.\n==========\n");
+        let res = parse_text("Foo bar baz.\r\n==========\r\n");
 
-        assert_eq!(res, Ok(("", "Foo bar baz.",)));
+        assert_eq!(res, Ok(("", "Foo bar baz.".into(),)));
+    }
+
+    #[test]
+    fn parse_single_clipping() {
+        let res = parse_clipping(SINGLE_CLIPPING);
+
+        assert_debug_snapshot!(res);
     }
 }
