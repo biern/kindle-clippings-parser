@@ -10,16 +10,14 @@ Ok(
             author: Some(
                 "Mihaly Csikszentmihalyi",
             ),
-            content: Highlight(
-                ClippingHighlight {
+            content: Note(
+                ClippingNote {
                     location: Location {
                         from: 1213,
-                        to: Some(
-                            1214,
-                        ),
+                        to: None,
                         kind: Location,
                     },
-                    highlight: "\r\nThe reason it is possible to achieve such complete involvement in a flow experience is that goals are usually clear, and feedback immediate.",
+                    note: "\r\nYada yada ya.",
                 },
             ),
         },
