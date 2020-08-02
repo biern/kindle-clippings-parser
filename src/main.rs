@@ -98,19 +98,13 @@ fn parse_title(input: &str) -> nom::IResult<&str, (&str, Option<&str>)> {
 
     let split: Vec<_> = line.rsplitn(2, " (").take(2).collect();
 
-    if split.len() >= 2 {
-        let title = split
-            .get(1)
-            .ok_or_else(|| nom::Err::Error((line, nom::error::ErrorKind::Tag)))?;
+    match split[..] {
+        [remainder, title] => {
+            let author = &remainder[0..remainder.len() - 1];
 
-        let author = split
-            .get(0)
-            .map(|l| &l[0..l.len() - 1])
-            .ok_or_else(|| nom::Err::Error((line, nom::error::ErrorKind::Tag)))?;
-
-        Ok((input, (title, Some(author))))
-    } else {
-        Ok((input, (line, None)))
+            Ok((input, (title, Some(author))))
+        }
+        _ => Ok((input, (line, None))),
     }
 }
 
