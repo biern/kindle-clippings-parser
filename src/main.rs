@@ -13,7 +13,7 @@ use std::fs;
 #[derive(Debug, PartialEq, Eq)]
 struct Clipping {
     title: String,
-    author: String,
+    author: Option<String>,
     location: Location,
     text: String,
 }
@@ -46,28 +46,32 @@ fn parse_clipping(input: &str) -> nom::IResult<&str, Clipping> {
         input,
         Clipping {
             title: title.into(),
-            author: author.into(),
+            author: author.map(String::from),
             location,
             text: text.into(),
         },
     ));
 }
 
-fn parse_title(input: &str) -> nom::IResult<&str, (&str, &str)> {
+fn parse_title(input: &str) -> nom::IResult<&str, (&str, Option<&str>)> {
     let (input, line) = terminated(take_while(|c| c != '\r'), tag("\r\n"))(input)?;
 
     let split: Vec<_> = line.rsplitn(2, " (").take(2).collect();
 
-    let title = split
-        .get(1)
-        .ok_or_else(|| nom::Err::Error((line, nom::error::ErrorKind::Tag)))?;
+    if split.len() >= 2 {
+        let title = split
+            .get(1)
+            .ok_or_else(|| nom::Err::Error((line, nom::error::ErrorKind::Tag)))?;
 
-    let author = split
-        .get(0)
-        .map(|l| &l[0..l.len() - 1])
-        .ok_or_else(|| nom::Err::Error((line, nom::error::ErrorKind::Tag)))?;
+        let author = split
+            .get(0)
+            .map(|l| &l[0..l.len() - 1])
+            .ok_or_else(|| nom::Err::Error((line, nom::error::ErrorKind::Tag)))?;
 
-    Ok((input, (title, author)))
+        Ok((input, (title, Some(author))))
+    } else {
+        Ok((input, (line, None)))
+    }
 }
 
 fn parse_location(input: &str) -> nom::IResult<&str, Location> {
@@ -143,7 +147,7 @@ The reason it is possible to achieve such complete involvement in a flow experie
     fn title() {
         assert_eq!(
             parse_title("Flow (Mihaly Csikszentmihalyi)\r\n"),
-            Ok(("", ("Flow", "Mihaly Csikszentmihalyi")))
+            Ok(("", ("Flow", Some("Mihaly Csikszentmihalyi"))))
         );
     }
 
@@ -151,8 +155,13 @@ The reason it is possible to achieve such complete involvement in a flow experie
     fn title_with_parens() {
         assert_eq!(
             parse_title("Foo (Bar) Baz (Author)\r\n"),
-            Ok(("", ("Foo (Bar) Baz", "Author")))
+            Ok(("", ("Foo (Bar) Baz", Some("Author"))))
         );
+    }
+
+    #[test]
+    fn title_no_author() {
+        assert_eq!(parse_title("Foo  \r\n"), Ok(("", ("Foo  ", None))));
     }
 
     #[test]

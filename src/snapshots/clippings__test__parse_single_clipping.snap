@@ -7,7 +7,9 @@ Ok(
         "",
         Clipping {
             title: "Flow",
-            author: "Mihaly Csikszentmihalyi",
+            author: Some(
+                "Mihaly Csikszentmihalyi",
+            ),
             location: Location {
                 from: 1213,
                 to: Some(
