@@ -10,7 +10,9 @@ Ok(
             author: "Mihaly Csikszentmihalyi",
             location: Location {
                 from: 1213,
-                to: 1214,
+                to: Some(
+                    1214,
+                ),
             },
             text: "The reason it is possible to achieve such complete involvement in a flow experience is that goals are usually clear, and feedback immediate.",
         },

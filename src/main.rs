@@ -1,4 +1,5 @@
 use nom::{
+    branch::alt,
     bytes::complete::{tag, take_while},
     character::complete::digit1,
     character::complete::space1,
@@ -6,6 +7,7 @@ use nom::{
     multi::many1,
     sequence::{preceded, separated_pair, terminated, tuple},
 };
+use std::env;
 use std::fs;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -19,11 +21,12 @@ struct Clipping {
 #[derive(Debug, PartialEq, Eq)]
 struct Location {
     from: u32,
-    to: u32,
+    to: Option<u32>,
 }
 
 fn main() {
-    let input = fs::read_to_string("My Clippings.txt").unwrap();
+    let args: Vec<String> = env::args().collect();
+    let input = fs::read_to_string(args.get(1).unwrap()).unwrap();
 
     let parsed = many1(parse_clipping)(&input);
 
@@ -35,7 +38,8 @@ fn main() {
 
 fn parse_clipping(input: &str) -> nom::IResult<&str, Clipping> {
     let (input, (title, author)) = parse_title(input)?;
-    let (input, location) = parse_location(input)?;
+    // TODO: Note should create a different clipping type
+    let (input, location) = alt((parse_location, parse_note_location))(input)?;
     let (input, text) = preceded(tag("\r\n"), parse_text)(input)?;
 
     return Ok((
@@ -80,7 +84,22 @@ fn parse_location(input: &str) -> nom::IResult<&str, Location> {
         input,
         Location {
             from: loc_from,
-            to: loc_to,
+            to: Some(loc_to),
+        },
+    ))
+}
+
+fn parse_note_location(input: &str) -> nom::IResult<&str, Location> {
+    let (input, _) = tuple((tag("- Your Note at location"), space1))(input)?;
+    let (input, loc_from) = map_res(digit1, |d| u32::from_str_radix(d, 10))(input)?;
+
+    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n"))(input)?;
+
+    Ok((
+        input,
+        Location {
+            from: loc_from,
+            to: None,
         },
     ))
 }
@@ -148,7 +167,25 @@ The reason it is possible to achieve such complete involvement in a flow experie
                 "",
                 Location {
                     from: 1213,
-                    to: 1214
+                    to: Some(1214)
+                }
+            ))
+        );
+    }
+
+    #[test]
+    fn note_location() {
+        let res = parse_note_location(
+            "- Your Note at location 1213 | Added on Sunday, 12 July 2015 17:36:17\r\n",
+        );
+
+        assert_eq!(
+            res,
+            Ok((
+                "",
+                Location {
+                    from: 1213,
+                    to: None
                 }
             ))
         );
