@@ -29,13 +29,13 @@ enum ClippingContent {
 #[derive(Debug, PartialEq, Eq)]
 struct ClippingHighlight {
     location: Location,
-    highlight: String,
+    text: String,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 struct ClippingNote {
     location: Location,
-    note: String,
+    text: String,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -126,7 +126,7 @@ fn parse_clipping_highlight(input: &str) -> nom::IResult<&str, ClippingContent> 
         input,
         ClippingContent::Highlight(ClippingHighlight {
             location,
-            highlight: highlight.into(),
+            text: highlight.into(),
         }),
     ));
 }
@@ -141,7 +141,7 @@ fn parse_clipping_note(input: &str) -> nom::IResult<&str, ClippingContent> {
     return Ok((
         input,
         ClippingContent::Note(ClippingNote {
-            note: note.into(),
+            text: note.into(),
             location,
         }),
     ));
