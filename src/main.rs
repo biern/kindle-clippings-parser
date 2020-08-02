@@ -83,15 +83,26 @@ fn parse_location(input: &str) -> nom::IResult<&str, Location> {
 }
 
 fn parse_text(input: &str) -> nom::IResult<&str, &str> {
-    for c in 0..input.len() {
-        let terminated: nom::IResult<&str, &str> = tag("\r\n==========\r\n")(&input[c..]);
+    parse_until(tag("\r\n==========\r\n"))(input)
+}
 
-        if let Ok((remaining, _)) = terminated {
-            return Ok((remaining, &input[..c]));
+pub fn parse_until<'a, E: nom::error::ParseError<&'a str>, F>(
+    terminator: F,
+) -> impl Fn(&'a str) -> nom::IResult<&'a str, &'a str, E>
+where
+    F: Fn(&'a str) -> nom::IResult<&'a str, &'a str, E>,
+{
+    move |input: &str| {
+        for c in 0..input.len() {
+            let terminated = terminator(&input[c..]);
+
+            if let Ok((remaining, _)) = terminated {
+                return Ok((remaining, &input[..c]));
+            }
         }
-    }
 
-    return Err(nom::Err::Incomplete(nom::Needed::Unknown));
+        return Err(nom::Err::Incomplete(nom::Needed::Unknown));
+    }
 }
 
 mod test {
