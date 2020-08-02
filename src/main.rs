@@ -118,7 +118,7 @@ fn parse_clipping_highlight(input: &str) -> nom::IResult<&str, ClippingContent> 
     let (input, (_, location, _)) =
         tuple((tag("- Your Highlight "), parse_location, space1))(input)?;
 
-    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n"))(input)?;
+    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n\r\n"))(input)?;
 
     let (input, highlight) = parse_until(tag("\r\n==========\r\n"))(input)?;
 
@@ -134,7 +134,7 @@ fn parse_clipping_highlight(input: &str) -> nom::IResult<&str, ClippingContent> 
 fn parse_clipping_note(input: &str) -> nom::IResult<&str, ClippingContent> {
     let (input, (_, location, _)) = tuple((tag("- Your Note "), parse_location, space1))(input)?;
 
-    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n"))(input)?;
+    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n\r\n"))(input)?;
 
     let (input, note) = parse_until(tag("\r\n==========\r\n"))(input)?;
 
@@ -151,7 +151,7 @@ fn parse_clipping_article_clip(input: &str) -> nom::IResult<&str, ClippingConten
     let (input, (_, location, _)) =
         tuple((tag("- Clip This Article "), parse_location, space1))(input)?;
 
-    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n"))(input)?;
+    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n\r\n"))(input)?;
 
     let (input, text) = parse_until(tag("\r\n==========\r\n"))(input)?;
 

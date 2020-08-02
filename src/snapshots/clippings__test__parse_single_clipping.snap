@@ -19,7 +19,7 @@ Ok(
                         ),
                         kind: Location,
                     },
-                    highlight: "\r\nThe reason it is possible to achieve such complete involvement in a flow experience is that goals are usually clear, and feedback immediate.",
+                    highlight: "The reason it is possible to achieve such complete involvement in a flow experience is that goals are usually clear, and feedback immediate.",
                 },
             ),
         },

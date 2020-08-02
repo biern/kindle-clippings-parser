@@ -17,7 +17,7 @@ Ok(
                         to: None,
                         kind: Location,
                     },
-                    note: "\r\nYada yada ya.",
+                    note: "Yada yada ya.",
                 },
             ),
         },
