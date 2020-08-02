@@ -224,6 +224,7 @@ where
     }
 }
 
+#[cfg(test)]
 mod test {
     use insta::assert_debug_snapshot;
 
