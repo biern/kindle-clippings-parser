@@ -1,0 +1,25 @@
+---
+source: src/main.rs
+expression: res
+---
+Ok(
+    (
+        "",
+        Clipping {
+            title: "crofflr 2015-08-07",
+            author: Some(
+                "crofflr.com",
+            ),
+            content: ArticleClip(
+                ClippingArticleClip {
+                    location: Location {
+                        from: 228,
+                        to: None,
+                        kind: Location,
+                    },
+                    text: "\r\nYada yada ya",
+                },
+            ),
+        },
+    ),
+)

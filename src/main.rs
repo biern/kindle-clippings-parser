@@ -1,14 +1,15 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_while},
+    bytes::complete::{tag, tag_no_case, take_while},
     character::complete::digit1,
     character::complete::space1,
-    combinator::{map_res, opt},
+    combinator::{map, map_res, opt},
     multi::many1,
-    sequence::{preceded, separated_pair, terminated, tuple},
+    sequence::{preceded, terminated, tuple},
 };
 use std::env;
 use std::fs;
+use std::string::String;
 
 #[derive(Debug, PartialEq, Eq)]
 struct Clipping {
@@ -22,6 +23,7 @@ enum ClippingContent {
     Highlight(ClippingHighlight),
     Note(ClippingNote),
     Bookmark(ClippingBookmark),
+    ArticleClip(ClippingArticleClip),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -34,6 +36,12 @@ struct ClippingHighlight {
 struct ClippingNote {
     location: Location,
     note: String,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct ClippingArticleClip {
+    location: Location,
+    text: String,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -72,6 +80,7 @@ fn parse_clipping(input: &str) -> nom::IResult<&str, Clipping> {
         parse_clipping_highlight,
         parse_clipping_note,
         parse_clipping_bookmark,
+        parse_clipping_article_clip,
     ))(input)?;
 
     return Ok((
@@ -138,6 +147,23 @@ fn parse_clipping_note(input: &str) -> nom::IResult<&str, ClippingContent> {
     ));
 }
 
+fn parse_clipping_article_clip(input: &str) -> nom::IResult<&str, ClippingContent> {
+    let (input, (_, location, _)) =
+        tuple((tag("- Clip This Article "), parse_location, space1))(input)?;
+
+    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n"))(input)?;
+
+    let (input, text) = parse_until(tag("\r\n==========\r\n"))(input)?;
+
+    return Ok((
+        input,
+        ClippingContent::ArticleClip(ClippingArticleClip {
+            text: text.into(),
+            location,
+        }),
+    ));
+}
+
 fn parse_clipping_bookmark(input: &str) -> nom::IResult<&str, ClippingContent> {
     let (input, (_, location, _)) =
         tuple((tag("- Your Bookmark "), parse_location, space1))(input)?;
@@ -153,7 +179,10 @@ fn parse_clipping_bookmark(input: &str) -> nom::IResult<&str, ClippingContent> {
 
 fn parse_location(input: &str) -> nom::IResult<&str, Location> {
     let (input, (kind, _, from, to)) = tuple((
-        alt((tag("at location"), tag("on page"))),
+        map(
+            alt((tag_no_case("at location"), tag_no_case("on page"))),
+            |s: &str| s.to_ascii_lowercase(),
+        ),
         tag(" "),
         map_res(digit1, |d| u32::from_str_radix(d, 10)),
         opt(preceded(
@@ -165,7 +194,7 @@ fn parse_location(input: &str) -> nom::IResult<&str, Location> {
     Ok((
         input,
         Location {
-            kind: match kind {
+            kind: match kind.as_ref() {
                 "at location" => LocationKind::Location,
                 "on page" => LocationKind::Page,
                 _ => panic!(format!("Unexpected tag {}", kind)),
@@ -218,6 +247,13 @@ Yada yada ya.\r
 - Your Bookmark at location 3883 | Added on Sunday, 22 October 2017 23:09:48\r
 \r
 \r
+==========\r
+";
+
+    const SINGLE_ARTICLE_CLIP: &str = "crofflr 2015-08-07 (crofflr.com)\r
+- Clip This Article at Location 228 | Added on Sunday, 9 August 2015 12:50:40\r
+\r
+Yada yada ya\r
 ==========\r
 ";
 
@@ -317,6 +353,13 @@ Yada yada ya.\r
     #[test]
     fn parse_single_bookmark() {
         let res = parse_clipping(SINGLE_BOOKMARK);
+
+        assert_debug_snapshot!(res);
+    }
+
+    #[test]
+    fn parse_single_article_clip() {
+        let res = parse_clipping(SINGLE_ARTICLE_CLIP);
 
         assert_debug_snapshot!(res);
     }
