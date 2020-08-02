@@ -25,9 +25,12 @@ struct Location {
 fn main() {
     let input = fs::read_to_string("My Clippings.txt").unwrap();
 
-    let clippings = many1(parse_clipping)(&input);
+    let parsed = many1(parse_clipping)(&input);
 
-    println!("{:?}", clippings);
+    match parsed {
+        Ok((_, clippings)) => println!("{:?}", clippings),
+        Err(e) => println!("Errors: {:?}", e),
+    }
 }
 
 fn parse_clipping(input: &str) -> nom::IResult<&str, Clipping> {
@@ -93,11 +96,11 @@ where
     F: Fn(&'a str) -> nom::IResult<&'a str, &'a str, E>,
 {
     move |input: &str| {
-        for c in 0..input.len() {
-            let terminated = terminator(&input[c..]);
+        for (i, _c) in input.char_indices() {
+            let terminated = terminator(&input[i..]);
 
             if let Ok((remaining, _)) = terminated {
-                return Ok((remaining, &input[..c]));
+                return Ok((remaining, &input[..i]));
             }
         }
 
@@ -156,6 +159,13 @@ The reason it is possible to achieve such complete involvement in a flow experie
         let res = parse_text("Foo bar baz.\r\n==========\r\n");
 
         assert_eq!(res, Ok(("", "Foo bar baz.".into(),)));
+    }
+
+    #[test]
+    fn text_utf8() {
+        let res = parse_text("’Foo bar baz’.\r\n==========\r\n");
+
+        assert_eq!(res, Ok(("", "’Foo bar baz’.".into(),)));
     }
 
     #[test]
