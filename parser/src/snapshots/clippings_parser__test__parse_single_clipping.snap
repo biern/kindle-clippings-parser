@@ -1,5 +1,5 @@
 ---
-source: src/main.rs
+source: parser/src/main.rs
 expression: res
 ---
 Ok(
@@ -10,14 +10,16 @@ Ok(
             author: Some(
                 "Mihaly Csikszentmihalyi",
             ),
-            content: Note(
-                ClippingNote {
+            content: Highlight(
+                ClippingHighlight {
                     location: Location {
                         from: 1213,
-                        to: None,
+                        to: Some(
+                            1214,
+                        ),
                         kind: Location,
                     },
-                    text: "Yada yada ya.",
+                    text: "The reason it is possible to achieve such complete involvement in a flow experience is that goals are usually clear, and feedback immediate.",
                 },
             ),
         },

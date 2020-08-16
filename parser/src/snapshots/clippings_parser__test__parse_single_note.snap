@@ -1,23 +1,23 @@
 ---
-source: src/main.rs
+source: parser/src/main.rs
 expression: res
 ---
 Ok(
     (
         "",
         Clipping {
-            title: "crofflr 2015-08-07",
+            title: "Flow",
             author: Some(
-                "crofflr.com",
+                "Mihaly Csikszentmihalyi",
             ),
-            content: ArticleClip(
-                ClippingArticleClip {
+            content: Note(
+                ClippingNote {
                     location: Location {
-                        from: 228,
+                        from: 1213,
                         to: None,
                         kind: Location,
                     },
-                    text: "Yada yada ya",
+                    text: "Yada yada ya.",
                 },
             ),
         },

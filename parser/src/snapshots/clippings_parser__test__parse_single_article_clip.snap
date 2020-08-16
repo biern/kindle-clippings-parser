@@ -1,22 +1,23 @@
 ---
-source: src/main.rs
+source: parser/src/main.rs
 expression: res
 ---
 Ok(
     (
         "",
         Clipping {
-            title: "Sapiens: A Brief History of Humankind",
+            title: "crofflr 2015-08-07",
             author: Some(
-                "Harari, Yuval Noah",
+                "crofflr.com",
             ),
-            content: Bookmark(
-                ClippingBookmark {
+            content: ArticleClip(
+                ClippingArticleClip {
                     location: Location {
-                        from: 3883,
+                        from: 228,
                         to: None,
                         kind: Location,
                     },
+                    text: "Yada yada ya",
                 },
             ),
         },

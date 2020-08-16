@@ -7,18 +7,20 @@ use nom::{
     multi::many1,
     sequence::{preceded, terminated, tuple},
 };
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::string::String;
 
-#[derive(Debug, PartialEq, Eq)]
-struct Clipping {
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+pub struct Clipping {
     title: String,
     author: Option<String>,
     content: ClippingContent,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[serde(tag = "kind")]
 enum ClippingContent {
     Highlight(ClippingHighlight),
     Note(ClippingNote),
@@ -26,37 +28,37 @@ enum ClippingContent {
     ArticleClip(ClippingArticleClip),
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 struct ClippingHighlight {
     location: Location,
     text: String,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 struct ClippingNote {
     location: Location,
     text: String,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 struct ClippingArticleClip {
     location: Location,
     text: String,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 struct ClippingBookmark {
     location: Location,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 struct Location {
     from: u32,
     to: Option<u32>,
     kind: LocationKind,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 enum LocationKind {
     Page,
     Location,
@@ -72,6 +74,10 @@ fn main() {
         Ok((_, clippings)) => println!("{:?}", clippings),
         Err(e) => println!("Errors: {:}", e),
     }
+}
+
+pub fn parse(input: &str) -> nom::IResult<&str, Vec<Clipping>> {
+    many1(parse_clipping)(&input)
 }
 
 fn parse_clipping(input: &str) -> nom::IResult<&str, Clipping> {
