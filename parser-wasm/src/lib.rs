@@ -1,29 +1,6 @@
 use clippings_parser;
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen(typescript_custom_section)]
-const TS_APPEND_CONTENT: &'static str = r#"
-export type ParseResult = Clipping[];
-
-export type Clipping = {
-  title: string;
-  author: string;
-  content: ClippingContent;
-};
-
-export type ClippingContent =
-  | { kind: "ClippingHighlight", location: Location, text: string }
-  | { kind: "ClippingNote", location: Location, text: string }
-  | { kind: "ClippingBookmark", location: Location }
-  | { kind: "ClippingArticleClip", location: Location, text: string };
-
-export type Location = {
-    from: number;
-    to: number | null;
-    kind: "Page" | "Location";
-};
-"#;
-
 #[wasm_bindgen]
 pub fn parse_clippings(text: &str) -> String {
     let clippings = clippings_parser::parse(text).unwrap().1;
