@@ -8,9 +8,6 @@ use nom::{
     sequence::{preceded, terminated, tuple},
 };
 use serde::{Deserialize, Serialize};
-use std::env;
-use std::fs;
-use std::string::String;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Clipping {
@@ -62,18 +59,6 @@ struct Location {
 enum LocationKind {
     Page,
     Location,
-}
-
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    let input = fs::read_to_string(args.get(1).unwrap()).unwrap();
-
-    let parsed = many1(parse_clipping)(&input);
-
-    match parsed {
-        Ok((_, clippings)) => println!("{:?}", clippings),
-        Err(e) => println!("Errors: {:}", e),
-    }
 }
 
 pub fn parse(input: &str) -> nom::IResult<&str, Vec<Clipping>> {
