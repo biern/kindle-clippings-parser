@@ -4,65 +4,115 @@ use nom::{
     character::complete::digit1,
     character::complete::space1,
     combinator::{map, map_res, opt},
-    multi::many1,
+    multi::fold_many0,
     sequence::{preceded, terminated, tuple},
 };
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, string::String};
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-pub struct Clipping {
+#[derive(Default, Clone, Debug)]
+pub struct ClippingsMap {
+    pub entries: HashMap<Book, Vec<ClippingContent>>,
+}
+
+impl ClippingsMap {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn add(&mut self, clipping: Clipping) {
+        match self.entries.get_mut(&clipping.book) {
+            Some(items) => items.push(clipping.content),
+            None => {
+                self.entries.insert(clipping.book, vec![clipping.content]);
+            }
+        }
+    }
+}
+
+pub type ClippingsList = Vec<BookClippings>;
+
+impl Into<ClippingsList> for ClippingsMap {
+    fn into(self) -> ClippingsList {
+        self.entries
+            .into_iter()
+            .map(|(book, clippings)| BookClippings { book, clippings })
+            .collect()
+    }
+}
+
+pub fn sort_clippings_list(list: &mut ClippingsList) {
+    list.sort_by_key(|item| (item.book.author.clone(), item.book.title.clone()));
+}
+
+#[derive(Serialize, Debug)]
+pub struct BookClippings {
+    pub book: Book,
+    pub clippings: Vec<ClippingContent>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Book {
     title: String,
     author: Option<String>,
-    content: ClippingContent,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+pub struct Clipping {
+    book: Book,
+    content: ClippingContent,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(tag = "kind")]
-enum ClippingContent {
+pub enum ClippingContent {
     Highlight(ClippingHighlight),
     Note(ClippingNote),
     Bookmark(ClippingBookmark),
     ArticleClip(ClippingArticleClip),
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-struct ClippingHighlight {
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct ClippingHighlight {
     location: Location,
     text: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-struct ClippingNote {
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct ClippingNote {
     location: Location,
     text: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-struct ClippingArticleClip {
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct ClippingArticleClip {
     location: Location,
     text: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-struct ClippingBookmark {
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct ClippingBookmark {
     location: Location,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-struct Location {
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct Location {
     from: u32,
     to: Option<u32>,
     kind: LocationKind,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-enum LocationKind {
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub enum LocationKind {
     Page,
     Location,
 }
 
-pub fn parse(input: &str) -> nom::IResult<&str, Vec<Clipping>> {
-    many1(parse_clipping)(&input)
+pub fn parse(input: &str) -> nom::IResult<&str, ClippingsMap> {
+    fold_many0(parse_clipping, ClippingsMap::new(), |mut acc, item| {
+        acc.add(item);
+        acc
+    })(input)
 }
 
 fn parse_clipping(input: &str) -> nom::IResult<&str, Clipping> {
@@ -77,8 +127,10 @@ fn parse_clipping(input: &str) -> nom::IResult<&str, Clipping> {
     return Ok((
         input,
         Clipping {
-            title: title.into(),
-            author: author.map(String::from),
+            book: Book {
+                title: title.into(),
+                author: author.map(String::from),
+            },
             content,
         },
     ));
@@ -346,6 +398,23 @@ Yada yada ya\r
     #[test]
     fn parse_single_article_clip() {
         let res = parse_clipping(SINGLE_ARTICLE_CLIP);
+
+        assert_debug_snapshot!(res);
+    }
+
+    #[test]
+    fn parse_clippings() {
+        let input = &[
+            SINGLE_ARTICLE_CLIP,
+            SINGLE_ARTICLE_CLIP,
+            SINGLE_BOOKMARK,
+            SINGLE_NOTE,
+        ]
+        .concat();
+
+        let mut res: ClippingsList = parse(input).unwrap().1.into();
+
+        sort_clippings_list(&mut res);
 
         assert_debug_snapshot!(res);
     }

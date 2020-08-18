@@ -1,15 +1,17 @@
 ---
-source: parser/src/main.rs
+source: parser/src/lib.rs
 expression: res
 ---
 Ok(
     (
         "",
         Clipping {
-            title: "Sapiens: A Brief History of Humankind",
-            author: Some(
-                "Harari, Yuval Noah",
-            ),
+            book: Book {
+                title: "Sapiens: A Brief History of Humankind",
+                author: Some(
+                    "Harari, Yuval Noah",
+                ),
+            },
             content: Bookmark(
                 ClippingBookmark {
                     location: Location {

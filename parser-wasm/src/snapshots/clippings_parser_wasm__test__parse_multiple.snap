@@ -1,0 +1,49 @@
+---
+source: parser-wasm/src/lib.rs
+expression: res
+---
+[
+  {
+    "book": {
+      "author": "Author X",
+      "title": "Book 1"
+    },
+    "clippings": [
+      {
+        "kind": "Highlight",
+        "location": {
+          "from": 1,
+          "kind": "Location",
+          "to": 100
+        },
+        "text": "Book 1 highlight 1 content."
+      },
+      {
+        "kind": "Highlight",
+        "location": {
+          "from": 2,
+          "kind": "Location",
+          "to": 200
+        },
+        "text": "Book 1 highlight 2 content."
+      }
+    ]
+  },
+  {
+    "book": {
+      "author": "Author X",
+      "title": "Book 2"
+    },
+    "clippings": [
+      {
+        "kind": "Highlight",
+        "location": {
+          "from": 1,
+          "kind": "Location",
+          "to": 100
+        },
+        "text": "Book 2 highlight 1 content."
+      }
+    ]
+  }
+]

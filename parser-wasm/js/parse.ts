@@ -1,9 +1,11 @@
-export type ParseResult = Clipping[];
+export type ParseResult = BookClippings[];
 
-export type Clipping = {
-  title: string;
-  author: string;
-  content: ClippingContent;
+export type BookClippings = {
+  book: {
+    title: string;
+    author: string;
+  };
+  clippings: ClippingContent[];
 };
 
 export type ClippingContent =

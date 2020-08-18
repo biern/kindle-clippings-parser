@@ -1,15 +1,17 @@
 ---
-source: parser/src/main.rs
+source: parser/src/lib.rs
 expression: res
 ---
 Ok(
     (
         "",
         Clipping {
-            title: "Flow",
-            author: Some(
-                "Mihaly Csikszentmihalyi",
-            ),
+            book: Book {
+                title: "Flow",
+                author: Some(
+                    "Mihaly Csikszentmihalyi",
+                ),
+            },
             content: Note(
                 ClippingNote {
                     location: Location {

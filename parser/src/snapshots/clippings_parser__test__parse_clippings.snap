@@ -1,0 +1,75 @@
+---
+source: parser/src/lib.rs
+expression: res
+---
+[
+    BookClippings {
+        book: Book {
+            title: "Sapiens: A Brief History of Humankind",
+            author: Some(
+                "Harari, Yuval Noah",
+            ),
+        },
+        clippings: [
+            Bookmark(
+                ClippingBookmark {
+                    location: Location {
+                        from: 3883,
+                        to: None,
+                        kind: Location,
+                    },
+                },
+            ),
+        ],
+    },
+    BookClippings {
+        book: Book {
+            title: "Flow",
+            author: Some(
+                "Mihaly Csikszentmihalyi",
+            ),
+        },
+        clippings: [
+            Note(
+                ClippingNote {
+                    location: Location {
+                        from: 1213,
+                        to: None,
+                        kind: Location,
+                    },
+                    text: "Yada yada ya.",
+                },
+            ),
+        ],
+    },
+    BookClippings {
+        book: Book {
+            title: "crofflr 2015-08-07",
+            author: Some(
+                "crofflr.com",
+            ),
+        },
+        clippings: [
+            ArticleClip(
+                ClippingArticleClip {
+                    location: Location {
+                        from: 228,
+                        to: None,
+                        kind: Location,
+                    },
+                    text: "Yada yada ya",
+                },
+            ),
+            ArticleClip(
+                ClippingArticleClip {
+                    location: Location {
+                        from: 228,
+                        to: None,
+                        kind: Location,
+                    },
+                    text: "Yada yada ya",
+                },
+            ),
+        ],
+    },
+]

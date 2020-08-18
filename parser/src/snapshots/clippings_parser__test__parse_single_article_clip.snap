@@ -1,15 +1,17 @@
 ---
-source: parser/src/main.rs
+source: parser/src/lib.rs
 expression: res
 ---
 Ok(
     (
         "",
         Clipping {
-            title: "crofflr 2015-08-07",
-            author: Some(
-                "crofflr.com",
-            ),
+            book: Book {
+                title: "crofflr 2015-08-07",
+                author: Some(
+                    "crofflr.com",
+                ),
+            },
             content: ArticleClip(
                 ClippingArticleClip {
                     location: Location {
