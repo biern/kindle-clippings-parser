@@ -1,6 +1,6 @@
 [package]
 name = "clippings-parser-wasm"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Marcin Biernat <mb@marcinbiernat.pl>"]
 edition = "2018"
 
