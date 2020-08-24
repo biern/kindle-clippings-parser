@@ -8,3 +8,6 @@ popd
 
 cat ./js/parse.js >> ./pkg/clippings_parser_wasm_bg.js
 cat ./js/parse.d.ts >> ./pkg/clippings_parser_wasm.d.ts
+
+# https://github.com/rustwasm/wasm-pack/issues/837
+cat <<< "$(jq ".files += [ \"clippings_parser_wasm_bg.js\" ]" < ./pkg/package.json)" > ./pkg/package.json
