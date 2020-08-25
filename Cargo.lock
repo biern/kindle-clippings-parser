@@ -35,7 +35,7 @@ dependencies = [
 
 [[package]]
 name = "clippings-parser-wasm"
-version = "0.1.3"
+version = "0.1.5"
 dependencies = [
  "clippings-parser",
  "insta",

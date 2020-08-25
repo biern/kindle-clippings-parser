@@ -9,10 +9,10 @@ export type BookClippings = {
 };
 
 export type ClippingContent =
-  | { kind: "ClippingHighlight", location: Location, text: string }
-  | { kind: "ClippingNote", location: Location, text: string }
-  | { kind: "ClippingBookmark", location: Location }
-  | { kind: "ClippingArticleClip", location: Location, text: string };
+  | { kind: "Highlight", location: Location, text: string }
+  | { kind: "Note", location: Location, text: string }
+  | { kind: "Bookmark", location: Location }
+  | { kind: "ArticleClip", location: Location, text: string };
 
 export type Location = {
   from: number;
