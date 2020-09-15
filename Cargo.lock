@@ -153,6 +153,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "parser-cli"
+version = "0.1.0"
+dependencies = [
+ "clippings-parser",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
