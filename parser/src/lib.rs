@@ -4,7 +4,7 @@ use nom::{
     character::complete::digit1,
     character::complete::space1,
     combinator::{map, map_res, opt},
-    multi::fold_many0,
+    multi::{fold_many0, many1},
     sequence::{preceded, terminated, tuple},
 };
 use serde::{Deserialize, Serialize};
@@ -137,7 +137,7 @@ fn parse_clipping(input: &str) -> nom::IResult<&str, Clipping> {
 }
 
 fn parse_title(input: &str) -> nom::IResult<&str, (&str, Option<&str>)> {
-    let (input, line) = terminated(take_while(|c| c != '\r'), tag("\r\n"))(input)?;
+    let (input, line) = parse_until_multi_newline(input)?;
 
     let split: Vec<_> = line.rsplitn(2, " (").take(2).collect();
 
@@ -155,9 +155,9 @@ fn parse_clipping_highlight(input: &str) -> nom::IResult<&str, ClippingContent> 
     let (input, (_, location, _)) =
         tuple((tag("- Your Highlight "), parse_location, space1))(input)?;
 
-    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n\r\n"))(input)?;
+    let (input, _) = parse_until_multi_newline(input)?;
 
-    let (input, highlight) = parse_until(tag("\r\n==========\r\n"))(input)?;
+    let (input, highlight) = parse_until_clipping_end(input)?;
 
     return Ok((
         input,
@@ -171,9 +171,9 @@ fn parse_clipping_highlight(input: &str) -> nom::IResult<&str, ClippingContent> 
 fn parse_clipping_note(input: &str) -> nom::IResult<&str, ClippingContent> {
     let (input, (_, location, _)) = tuple((tag("- Your Note "), parse_location, space1))(input)?;
 
-    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n\r\n"))(input)?;
+    let (input, _) = parse_until_multi_newline(input)?;
 
-    let (input, note) = parse_until(tag("\r\n==========\r\n"))(input)?;
+    let (input, note) = parse_until_clipping_end(input)?;
 
     return Ok((
         input,
@@ -188,9 +188,9 @@ fn parse_clipping_article_clip(input: &str) -> nom::IResult<&str, ClippingConten
     let (input, (_, location, _)) =
         tuple((tag("- Clip This Article "), parse_location, space1))(input)?;
 
-    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n\r\n"))(input)?;
+    let (input, _) = parse_until_multi_newline(input)?;
 
-    let (input, text) = parse_until(tag("\r\n==========\r\n"))(input)?;
+    let (input, text) = parse_until_clipping_end(input)?;
 
     return Ok((
         input,
@@ -205,13 +205,25 @@ fn parse_clipping_bookmark(input: &str) -> nom::IResult<&str, ClippingContent> {
     let (input, (_, location, _)) =
         tuple((tag("- Your Bookmark "), parse_location, space1))(input)?;
 
-    let (input, _) = terminated(take_while(|c| c != '\r'), tag("\r\n"))(input)?;
-    let (input, _) = parse_until(tag("\r\n==========\r\n"))(input)?;
+    let (input, _) = parse_until_newline(input)?;
+    let (input, _) = parse_until_clipping_end(input)?;
 
     return Ok((
         input,
         ClippingContent::Bookmark(ClippingBookmark { location }),
     ));
+}
+
+fn parse_until_clipping_end(input: &str) -> nom::IResult<&str, &str> {
+    parse_until(tuple((parse_newline, tag("=========="), parse_newline)))(input)
+}
+
+fn parse_until_multi_newline(input: &str) -> nom::IResult<&str, &str> {
+    terminated(take_while(|c| c != '\r' && c != '\n'), many1(parse_newline))(input)
+}
+
+fn parse_until_newline(input: &str) -> nom::IResult<&str, &str> {
+    terminated(take_while(|c| c != '\r' && c != '\n'), parse_newline)(input)
 }
 
 fn parse_location(input: &str) -> nom::IResult<&str, Location> {
@@ -242,11 +254,16 @@ fn parse_location(input: &str) -> nom::IResult<&str, Location> {
     ))
 }
 
-pub fn parse_until<'a, E: nom::error::ParseError<&'a str>, F>(
+fn parse_newline(input: &str) -> nom::IResult<&str, ()> {
+    let (input, _) = alt((tag("\r\n"), tag("\n")))(input)?;
+    Ok((input, ()))
+}
+
+pub fn parse_until<'a, E: nom::error::ParseError<&'a str>, F, P>(
     terminator: F,
 ) -> impl Fn(&'a str) -> nom::IResult<&'a str, &'a str, E>
 where
-    F: Fn(&'a str) -> nom::IResult<&'a str, &'a str, E>,
+    F: Fn(&'a str) -> nom::IResult<&'a str, P, E>,
 {
     move |input: &str| {
         for (i, _c) in input.char_indices() {
@@ -272,6 +289,13 @@ mod test {
 \r
 The reason it is possible to achieve such complete involvement in a flow experience is that goals are usually clear, and feedback immediate.\r
 ==========\r
+";
+
+    const SINGLE_HIGHLIGHT_UNIX: &str = "Flow (Mihaly Csikszentmihalyi)
+- Your Highlight at location 1213-1214 | Added on Sunday, 12 July 2015 17:36:17
+
+The reason it is possible to achieve such complete involvement in a flow experience is that goals are usually clear, and feedback immediate.\r
+==========
 ";
 
     const SINGLE_NOTE: &str = "Flow (Mihaly Csikszentmihalyi)\r
@@ -377,6 +401,13 @@ Yada yada ya\r
     #[test]
     fn parse_single_clipping() {
         let res = parse_clipping(SINGLE_HIGHLIGHT);
+
+        assert_debug_snapshot!(res);
+    }
+
+    #[test]
+    fn parse_single_clipping_unix() {
+        let res = parse_clipping(SINGLE_HIGHLIGHT_UNIX);
 
         assert_debug_snapshot!(res);
     }
